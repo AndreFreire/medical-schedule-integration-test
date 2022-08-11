@@ -8,17 +8,25 @@ import org.junit.runners.MethodSorters;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.UUID;
 
-import static config.DefaultValues.doctorId;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
+import static utils.MongoUtils.createAppointment;
+import static utils.MongoUtils.createSchedule;
+import static utils.MongoUtils.deleteAppointment;
+import static utils.MongoUtils.deleteSchedule;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class TimetableTest extends BaseApi {
 
     @Test
     public void shouldGetTimetable() {
+        String doctorId = UUID.randomUUID().toString();
+        String appointmentId = UUID.randomUUID().toString();
+        createSchedule(doctorId, UUID.randomUUID().toString());
+        createAppointment(doctorId, appointmentId);
         given()
             .contentType(ContentType.JSON)
             .param("doctorId", doctorId)
@@ -26,18 +34,12 @@ public class TimetableTest extends BaseApi {
             .get("timetable")
         .then()
             .body("[0].doctorName", equalTo("dr strange"))
-            .body("[0].doctorId", equalTo("999999999"))
-            .body("[0].startAt", containsString(LocalDateTime.of(LocalDate.now(), LocalTime.of(14,0)).toString()))
+            .body("[0].doctorId", equalTo(doctorId))
+            .body("[0].startAt", containsString(LocalDateTime.of(LocalDate.now().plusDays(1), LocalTime.of(18,0)).toString()));
 
-            .body("[1].doctorName", equalTo("dr strange"))
-            .body("[1].doctorId", equalTo("999999999"))
-            .body("[1].startAt", containsString(LocalDateTime.of(LocalDate.now(), LocalTime.of(15,0)).toString()))
-
-                //14:30 have appointment
-
-            .body("[2].doctorName", equalTo("dr strange"))
-            .body("[2].doctorId", equalTo("999999999"))
-            .body("[2].startAt", containsString(LocalDateTime.of(LocalDate.now(), LocalTime.of(15,30)).toString()));
+             //18:00 have appointment
+        deleteSchedule(doctorId);
+        deleteAppointment(doctorId);
     }
 
     @Test
